@@ -86,8 +86,8 @@ void tryFunction(std::string name, Function f, std::vector<double> init) {
 }
 
 int main() {
-  tryFunction("Ackley", ackley, { 0.3, 0.7, -0.4, 0.2 });
-  tryFunction("Michaelewicz", michaelewicz, { 0.3, 0.7 });
-  tryFunction("Branin", branin, { 0.3, 0.7 });
-  tryFunction("Flower", flower, { 0.3, 0.7 });
+  tryFunction("Ackley", ackley, { 3.0, 12.5, -4.5, 5.7, 10.1 });
+  tryFunction("Michaelewicz", michaelewicz, { 1.3, 3.7 });
+  tryFunction("Branin", branin, { 12.0, 14.5 });
+  tryFunction("Flower", flower, { 1.3, 2.7 });
 }
