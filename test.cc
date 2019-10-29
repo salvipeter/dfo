@@ -1,5 +1,5 @@
-#include "downhill.hh"
 #include "mads.hh"
+#include "nelder-mead.hh"
 #include "powell.hh"
 
 #include <chrono>
