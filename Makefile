@@ -2,5 +2,5 @@ all: test
 
 CXXFLAGS=-Wall -pedantic -std=c++17 -O3
 
-test: test.o downhill.o powell.o
+test: test.o downhill.o powell.o mads.o
 	g++ -o $@ $^

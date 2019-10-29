@@ -1,10 +1,13 @@
 #include "downhill.hh"
+#include "mads.hh"
 #include "powell.hh"
 
+#include <chrono>
 #include <cmath>
 #include <iostream>
+#include <random>
 
-enum class Optimizer { NELDER_MEAD, POWELL };
+enum class Optimizer { MADS, NELDER_MEAD, POWELL };
 
 using Function = std::function<double (const std::vector<double> &)>;
 
@@ -59,9 +62,15 @@ void tryMethod(Optimizer optimizer, Function f, std::vector<double> x) {
   static size_t maxit = 1000;
   static double tolerance = 1.0e-8;
 
+  std::chrono::steady_clock::time_point start, stop;
   std::string name = "";
   evaluation_counter = 0;
+  start = std::chrono::steady_clock::now();
   switch (optimizer) {
+  case Optimizer::MADS:
+    name = "MADS";
+    MADS::optimize(f, x, maxit, tolerance, 1.0);
+    break;
   case Optimizer::NELDER_MEAD:
     name = "Nelder-Mead";
     NelderMead::optimize(f, x, maxit, tolerance, 1.0);
@@ -71,16 +80,21 @@ void tryMethod(Optimizer optimizer, Function f, std::vector<double> x) {
     Powell::optimize(f, x, maxit, tolerance, 100, 1.0e-4);
     break;
   }
+  stop = std::chrono::steady_clock::now();
   std::cout << name << ":" << std::endl;
   std::cout << evaluation_counter << " evaluations, result: " << f(x) << std::endl;
   std::cout << "  at:";
   for (double xi : x)
     std::cout << ' ' << xi;
   std::cout << std::endl;
+  std::cout << "  evaluation time: "
+            << std::chrono::duration_cast<std::chrono::milliseconds>(stop - start).count()
+            << "ms" << std::endl;
 }
 
 void tryFunction(std::string name, Function f, std::vector<double> init) {
   std::cout << "[" << name << "]" << std::endl;
+  tryMethod(Optimizer::MADS, f, init);
   tryMethod(Optimizer::NELDER_MEAD, f, init);
   tryMethod(Optimizer::POWELL, f, init);
 }
@@ -90,4 +104,14 @@ int main() {
   tryFunction("Michaelewicz", michaelewicz, { 1.3, 3.7 });
   tryFunction("Branin", branin, { 12.0, 14.5 });
   tryFunction("Flower", flower, { 1.3, 2.7 });
+
+  std::random_device rd;
+  std::default_random_engine re(rd());
+  std::uniform_real_distribution<double> rgen(-15, 15);
+  std::vector<double> large;
+  for (size_t i = 0; i < 100; ++i)
+    large.push_back(rgen(re));
+
+  tryFunction("Ackley - large", ackley, large);
+  tryFunction("Michaelewicz - large", michaelewicz, large);
 }
