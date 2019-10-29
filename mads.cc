@@ -2,48 +2,48 @@
 
 #include <algorithm>
 #include <random>
+#include <tuple>
 
 namespace MADS {
 
-  std::vector<Point> generatePositiveSpanningSet(std::default_random_engine &re,
-                                                 double alpha, size_t n) {
-    std::vector<Point> result;
+  using Permutation = std::vector<size_t>;
+
+  std::tuple<Point, Permutation, Permutation>
+  generatePositiveSpanningSet(std::default_random_engine &re, double alpha, size_t n) {
+    Point result((n + 1) * n);
     int delta = std::round(1.0 / std::sqrt(alpha));
-    static std::uniform_int_distribution<int> sign(0, 1), value(-delta + 1, delta - 1);
+    static std::uniform_int_distribution<size_t> sign(0, 1);
     static double signs[] = { -1.0, 1.0 };
+    std::uniform_int_distribution<int> value(-delta + 1, delta - 1);
     for (size_t i = 0; i < n; ++i) {
-      Point row(n, 0);
-      row[i] = delta * signs[sign(re)];
+      size_t index = i * n;
       for (size_t j = 0; j < i; ++j)
-        row[j] = value(re);
-      result.push_back(row);
+        result[index+j] = value(re);
+      result[index+i] = delta * signs[sign(re)];
     }
 
     // Shuffle
-    std::vector<size_t> indices;
+    std::vector<size_t> rows, cols;
     for (size_t i = 0; i < n; ++i)
-      indices.push_back(i);
-    std::shuffle(indices.begin(), indices.end(), re);
-    for (size_t j = 0; j < n - 1; ++j)
-      if (indices[j] > j)
-        for (size_t i = 0; i < n; ++i)
-          std::swap(result[i][j], result[i][indices[j]]);
-    std::shuffle(result.begin(), result.end(), re);
+      rows.push_back(i);
+    cols = rows;
+    rows.push_back(n);
+    std::shuffle(rows.begin(), rows.end(), re);
+    std::shuffle(cols.begin(), cols.end(), re);
 
     // Add an extra row
-    Point row(n, 0);
-    for (size_t i = 0; i < n; ++i)
-      for (size_t j = 0; j < n; ++j)
-        row[j] -= result[i][j];
-    result.push_back(row);
+    size_t index = n * n;
+    for (size_t i = 0, k = 0; i < n; ++i)
+      for (size_t j = 0; j < n; ++j, ++k)
+        result[index+j] -= result[k];
 
-    return result;
+    return { result, rows, cols };
   }
 
-  Point addmul(const Point &x, const Point &d, double alpha) {
+  Point addmul(const Point &x, const double *d, const Permutation &cols, double alpha) {
     Point result = x;
     for (size_t i = 0; i < result.size(); ++i)
-      result[i] += d[i] * alpha;
+      result[i] += d[cols[i]] * alpha;
     return result;
   }
 
@@ -55,16 +55,16 @@ namespace MADS {
     size_t n = x.size();
     for (size_t iter = 0; iter < max_iteration && alpha >= tolerance; ++iter) {
       bool improved = false;
-      auto span = generatePositiveSpanningSet(re, alpha, n);
+      auto [span, rows, cols] = generatePositiveSpanningSet(re, alpha, n);
       for (size_t i = 0; i <= n; ++i) {
-        const auto &d = span[i];
-        auto x1 = addmul(x, d, alpha * step_size);
+        const double *d = &span[rows[i] * n];
+        auto x1 = addmul(x, d, cols, alpha * step_size);
         double y1 = f(x1);
         if (y1 < y) {
           x = x1;
           y = y1;
           improved = true;
-          x1 = addmul(x, d, 3 * alpha * step_size);
+          x1 = addmul(x, d, cols, 3 * alpha * step_size);
           y1 = f(x1);
           if (y1 < y) {
             x = x1;
