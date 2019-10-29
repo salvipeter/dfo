@@ -4,6 +4,10 @@
 #include <cmath>
 #include <iostream>
 
+enum class Optimizer { NELDER_MEAD, POWELL };
+
+using Function = std::function<double (const std::vector<double> &)>;
+
 size_t evaluation_counter;
 
 // nD functions:
@@ -51,96 +55,39 @@ double flower(const std::vector<double> &x) {
   return a * norm + b * std::sin(c * std::atan(x[1] / x[0]));
 }
 
+void tryMethod(Optimizer optimizer, Function f, std::vector<double> x) {
+  static size_t maxit = 1000;
+  static double tolerance = 1.0e-8;
+
+  std::string name = "";
+  evaluation_counter = 0;
+  switch (optimizer) {
+  case Optimizer::NELDER_MEAD:
+    name = "Nelder-Mead";
+    NelderMead::optimize(f, x, maxit, tolerance, 1.0);
+    break;
+  case Optimizer::POWELL:
+    name = "Powell";
+    Powell::optimize(f, x, maxit, tolerance, 100, 1.0e-4);
+    break;
+  }
+  std::cout << name << ":" << std::endl;
+  std::cout << evaluation_counter << " evaluations, result: " << f(x) << std::endl;
+  std::cout << "  at:";
+  for (double xi : x)
+    std::cout << ' ' << xi;
+  std::cout << std::endl;
+}
+
+void tryFunction(std::string name, Function f, std::vector<double> init) {
+  std::cout << "[" << name << "]" << std::endl;
+  tryMethod(Optimizer::NELDER_MEAD, f, init);
+  tryMethod(Optimizer::POWELL, f, init);
+}
+
 int main() {
-  size_t maxit = 1000;
-  double tolerance = 1.0e-8;
-  std::vector<double> x;
-
-  std::cout << "[Ackley]" << std::endl;
-
-  std::cout << "Nelder-Mead:" << std::endl;
-  evaluation_counter = 0;
-  x = { 0.3, 0.7, -0.4, 0.2 };
-  NelderMead::optimize(ackley, x, maxit, tolerance, 1.0);
-  std::cout << evaluation_counter << " evaluations, result: " << ackley(x) << std::endl;
-  std::cout << "  at:";
-  for (double xi : x)
-    std::cout << ' ' << xi;
-  std::cout << std::endl;
-
-  std::cout << "Powell:" << std::endl;
-  evaluation_counter = 0;
-  x = { 0.3, 0.7, -0.4, 0.2 };
-  Powell::optimize(ackley, x, maxit, tolerance, 100, 1.0e-4);
-  std::cout << evaluation_counter << " evaluations, result: " << ackley(x) << std::endl;
-  std::cout << "  at:";
-  for (double xi : x)
-    std::cout << ' ' << xi;
-  std::cout << std::endl;
-
-  std::cout << "[Michaelewicz]" << std::endl;
-
-  std::cout << "Nelder-Mead:" << std::endl;
-  evaluation_counter = 0;
-  x = { 0.3, 0.7 };
-  NelderMead::optimize(michaelewicz, x, maxit, tolerance, 1.0);
-  std::cout << evaluation_counter << " evaluations, result: " << michaelewicz(x) << std::endl;
-  std::cout << "  at:";
-  for (double xi : x)
-    std::cout << ' ' << xi;
-  std::cout << std::endl;
-
-  std::cout << "Powell:" << std::endl;
-  evaluation_counter = 0;
-  x = { 0.3, 0.7 };
-  Powell::optimize(michaelewicz, x, maxit, tolerance, 100, 1.0e-4);
-  std::cout << evaluation_counter << " evaluations, result: " << michaelewicz(x) << std::endl;
-  std::cout << "  at:";
-  for (double xi : x)
-    std::cout << ' ' << xi;
-  std::cout << std::endl;
-
-  std::cout << "[Branin]" << std::endl;
-
-  std::cout << "Nelder-Mead:" << std::endl;
-  evaluation_counter = 0;
-  x = { 0.3, 0.7 };
-  NelderMead::optimize(branin, x, maxit, tolerance, 1.0);
-  std::cout << evaluation_counter << " evaluations, result: " << branin(x) << std::endl;
-  std::cout << "  at:";
-  for (double xi : x)
-    std::cout << ' ' << xi;
-  std::cout << std::endl;
-
-  std::cout << "Powell:" << std::endl;
-  evaluation_counter = 0;
-  x = { 0.3, 0.7 };
-  Powell::optimize(branin, x, maxit, tolerance, 100, 1.0e-4);
-  std::cout << evaluation_counter << " evaluations, result: " << branin(x) << std::endl;
-  std::cout << "  at:";
-  for (double xi : x)
-    std::cout << ' ' << xi;
-  std::cout << std::endl;
-
-  std::cout << "[Flower]" << std::endl;
-
-  std::cout << "Nelder-Mead:" << std::endl;
-  evaluation_counter = 0;
-  x = { 0.3, 0.7 };
-  NelderMead::optimize(flower, x, maxit, tolerance, 1.0);
-  std::cout << evaluation_counter << " evaluations, result: " << flower(x) << std::endl;
-  std::cout << "  at:";
-  for (double xi : x)
-    std::cout << ' ' << xi;
-  std::cout << std::endl;
-
-  std::cout << "Powell:" << std::endl;
-  evaluation_counter = 0;
-  x = { 0.3, 0.7 };
-  Powell::optimize(flower, x, maxit, tolerance, 100, 1.0e-4);
-  std::cout << evaluation_counter << " evaluations, result: " << flower(x) << std::endl;
-  std::cout << "  at:";
-  for (double xi : x)
-    std::cout << ' ' << xi;
-  std::cout << std::endl;
+  tryFunction("Ackley", ackley, { 0.3, 0.7, -0.4, 0.2 });
+  tryFunction("Michaelewicz", michaelewicz, { 0.3, 0.7 });
+  tryFunction("Branin", branin, { 0.3, 0.7 });
+  tryFunction("Flower", flower, { 0.3, 0.7 });
 }
