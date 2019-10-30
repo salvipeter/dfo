@@ -1,3 +1,4 @@
+#include "direct.hh"
 #include "mads.hh"
 #include "nelder-mead.hh"
 #include "powell.hh"
@@ -7,7 +8,7 @@
 #include <iostream>
 #include <random>
 
-enum class Optimizer { MADS, NELDER_MEAD, POWELL };
+enum class Optimizer { DIRECT, MADS, NELDER_MEAD, POWELL };
 
 using Function = std::function<double (const std::vector<double> &)>;
 
@@ -67,6 +68,13 @@ void tryMethod(Optimizer optimizer, Function f, std::vector<double> x, bool prin
   evaluation_counter = 0;
   start = std::chrono::steady_clock::now();
   switch (optimizer) {
+  case Optimizer::DIRECT:
+    name = "DIRECT";
+    {
+      std::vector<double> a(x.size(), -30), b(x.size(), 50);
+      x = DIRECT::optimize(f, a, b, 20, tolerance);
+    }
+    break;
   case Optimizer::MADS:
     name = "MADS";
     MADS::optimize(f, x, maxit, tolerance, 1.0);
@@ -96,6 +104,7 @@ void tryMethod(Optimizer optimizer, Function f, std::vector<double> x, bool prin
 
 void tryFunction(std::string name, Function f, std::vector<double> init, bool print_values) {
   std::cout << "[" << name << "]" << std::endl;
+  tryMethod(Optimizer::DIRECT, f, init, print_values);
   tryMethod(Optimizer::MADS, f, init, print_values);
   tryMethod(Optimizer::NELDER_MEAD, f, init, print_values);
   tryMethod(Optimizer::POWELL, f, init, print_values);

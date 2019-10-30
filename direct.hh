@@ -8,6 +8,7 @@ namespace DIRECT {
   using Point = std::vector<double>;
   using Function = std::function<double (const Point &)>;
 
-  bool optimize(const Function &f, Point &x, size_t max_iteration, double tolerance);
+  Point optimize(const Function &f, const Point &a, const Point &b,
+                 size_t iteration, double tolerance);
 
 }
