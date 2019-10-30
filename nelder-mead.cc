@@ -2,7 +2,6 @@
 
 #include <algorithm>
 #include <cmath>
-#include <execution>
 #include <limits>
 #include <numeric>
 
@@ -98,8 +97,8 @@ namespace NelderMead {
       }
 
       // Compute the standard deviation of y
-      double mean = std::reduce(std::execution::seq, y.begin(), y.end(), 0.0) / (n + 1.0);
-      Delta = std::transform_reduce(std::execution::seq, y.begin(), y.end(), 0.0, std::plus<>(),
+      double mean = std::accumulate(y.begin(), y.end(), 0.0) / (n + 1.0);
+      Delta = std::transform_reduce(y.begin(), y.end(), 0.0, std::plus<>(),
                                     [mean](double yi) { return std::pow(yi - mean, 2); }) / (n + 1);
     }
 
