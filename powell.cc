@@ -42,10 +42,10 @@ namespace Powell {
     return x < 0 ? -1 : 1;
   }
 
-  // As in Chapter 10 (2nd Ed: pp. 400-401, 3rd Ed: pp. 491-492) of
+  // As in Chapter 10 (pp. 491-492) of
   //   W.H. Press, S.A. Teukolsky, W.T. Vetterling, B.P. Flanner:
-  //     Numerical Recipes - The Art of Scientific Computing (2nd-3rd Ed).
-  //       Cambridge University Press, 1992/2007.
+  //     Numerical Recipes - The Art of Scientific Computing (3rd Ed).
+  //       Cambridge University Press, 2007.
   std::pair<double, double> bracket_minimum(const Function1D &f, double a = 0, double b = 1) {
     static const double gold = (1.0 + std::sqrt(5.0)) / 2.0;
     static const double tiny = std::numeric_limits<double>::epsilon() * 100.0;
@@ -93,8 +93,8 @@ namespace Powell {
 
   // As in Chapter 5, Section 8 (pp. 79-80) of
   //  R.P. Brent: Algorithms for minimization without derivatives, Prentice Hall, 1973.
-  double brent(const Function1D &f, double a, double b,
-               size_t max_iteration, double eps, double t = 1.0e-10) {
+  std::pair<double, double> brent(const Function1D &f, double a, double b,
+                                  size_t max_iteration, double eps, double t = 1.0e-10) {
     static const double c = (3.0 - std::sqrt(5.0)) / 2.0;
     double x = a + c * (b - a), v = x, w = x, d, e = 0;
     double fx = f(x), fv = fx, fw = fx;
@@ -156,36 +156,56 @@ namespace Powell {
       }
     }
 
-    return x;
+    return { x, fx };
   }
 
-  Point line_search(const Function &f, const Point &x, const Point &d,
-                    size_t max_iteration, double tolerance) {
+  std::pair<Point, double> line_search(const Function &f, const Point &x, const Point &d,
+                                       size_t max_iteration, double tolerance) {
     Function1D objective = [&](double alpha) { return f(addmul(x, d, alpha)); };
     auto [a, b] = bracket_minimum(objective);
-    double alpha = brent(objective, a, b, max_iteration, tolerance);
-    return addmul(x, d, alpha);
+    auto [alpha, fx] = brent(objective, a, b, max_iteration, tolerance);
+    return { addmul(x, d, alpha), fx };
   }
 
+  // Direction update based on Powell's heuristic (see Numerical Recipes in C, Section 10.7.3)
   bool optimize(const Function &f, Point &x, size_t max_iteration, double tolerance,
                 size_t max_iteration_1d, double tolerance_1d) {
     size_t n = x.size();
+    double fx = f(x);
     auto U = basis(n);
     double Delta = std::numeric_limits<double>::infinity();
 
     for (size_t iter = 0; iter < max_iteration && Delta >= tolerance; ++iter) {
-      auto x1 = x;
+      // Minimize in all directions and save the best direction
+      Point x1 = x;
+      double fx_prev = fx, fx1 = 0, largest_decrease = 0;
+      size_t best_dir = 0;
       for (size_t i = 0; i < n; ++i) {
         auto d = U[i];
-        x1 = line_search(f, x1, d, max_iteration_1d, tolerance_1d);
+        std::tie(x1, fx1) = line_search(f, x1, d, max_iteration_1d, tolerance_1d);
+        if (fx_prev - fx1 > largest_decrease) {
+          largest_decrease = fx_prev - fx1;
+          best_dir = i;
+        }
+        fx_prev = fx1;
       }
-      auto d = deviation(x1, x);
-      for (size_t i = 1; i < n; ++i)
-        U[i-1] = U[i];
-      U[n-1] = d;
-      x1 = line_search(f, x1, d, max_iteration_1d, tolerance_1d);
+
+      // Update directions
+      auto d = deviation(x1, x), extrapolated = addmul(x1, d, 1);
+      double fextrapolated = f(extrapolated);
+      // Only update directions when the overall deviation direction seems good
+      if (fextrapolated < fx &&
+          2 * (fx - 2 * fx1 + fextrapolated) * std::pow(fx - fx1 - largest_decrease, 2) -
+          largest_decrease * std::pow(fx - fextrapolated, 2) < 0) {
+        // Replace the best direction with the deviation direction
+        U[best_dir] = U[n-1];
+        U[n-1] = d;
+        // Minimize in the new direction
+        std::tie(x1, fx1) = line_search(f, x1, d, max_iteration_1d, tolerance_1d);
+      }
+
       Delta = norm(deviation(x1, x));
-      x = x1;
+      x = x1; fx = fx1;
     }
 
     return Delta < tolerance;
