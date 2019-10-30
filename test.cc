@@ -5,7 +5,9 @@
 
 #include <chrono>
 #include <cmath>
+#include <fstream>
 #include <iostream>
+#include <limits>
 #include <random>
 
 enum class Optimizer { DIRECT, MADS, NELDER_MEAD, POWELL };
@@ -110,7 +112,7 @@ void tryFunction(std::string name, Function f, std::vector<double> init, bool pr
   tryMethod(Optimizer::POWELL, f, init, print_values);
 }
 
-int main() {
+void numericTests() {
   tryFunction("Ackley", ackley, { 3.0, 12.5, -4.5, 5.7, 10.1 }, true);
   tryFunction("Michaelewicz", michaelewicz, { 1.3, 3.7 }, true);
   tryFunction("Branin", branin, { 12.0, 14.5 }, true);
@@ -124,4 +126,50 @@ int main() {
 
   tryFunction("Ackley - large", ackley, large, false);
   tryFunction("Michaelewicz - large", michaelewicz, large, false);
+}
+
+void imageTest() {
+  auto fun = michaelewicz;
+  std::vector<double> min = { -3, -8 }, max = { 4, 4 }, x = { 0, 1 };
+  // auto fun = ackley;
+  // std::vector<double> min = { -10, -10 }, max = { 8, 8 }, x = { -7, 3 };
+  // auto fun = branin;
+  // std::vector<double> min = { 0, 0 }, max = { 10, 10 }, x = { 3, 7 };
+  // auto fun = flower;
+  // std::vector<double> min = { -4, -4 }, max = { 3, 3 }, x = { -2, -3 };
+
+  double step = 0.01;
+  {
+    std::ofstream f("/tmp/evaluations.txt");
+    auto printer = [&](const std::vector<double> &x) {
+                     f << x[0] << ' ' << x[1] << std::endl;
+                     return fun(x);
+                   };
+    // DIRECT::optimize(printer, min, max, 30, 1.0e-8);
+    MADS::optimize(printer, x, 1000, 1.0e-8, 1.0);
+    // NelderMead::optimize(printer, x, 1000, 1.0e-8, 1.0);
+    // Powell::optimize(printer, x, 1000, 1.0e-8, 100, 1.0e-4);
+  }
+
+  double vmin = std::numeric_limits<double>::infinity(), vmax = -vmin;
+  std::vector<double> data;
+  for (double x = min[0]; x <= max[0]; x += step)
+    for (double y = min[1]; y <= max[1]; y += step) {
+      data.push_back(fun({ x, y }));
+      if (data.back() < vmin)
+        vmin = data.back();
+      if (data.back() > vmax)
+        vmax = data.back();
+    }
+
+  std::ofstream f("/tmp/image.txt");
+  size_t index = 0;
+  for (double x = min[0]; x <= max[0]; x += step)
+    for (double y = min[1]; y <= max[1]; y += step, ++index)
+      f << x << ' ' << y << ' ' << (data[index] - vmin) * 8.0 / (vmax - vmin) << std::endl;
+}
+
+int main() {
+  // numericTests();
+  imageTest();
 }
