@@ -7,8 +7,6 @@ namespace Powell {
 
   using Function1D = std::function<double (double)>;
 
-  const double phi = (3.0 - std::sqrt(5.0)) / 2.0;
-  
   std::vector<Point> basis(size_t n) {
     std::vector<Point> result;
     for (size_t i = 0; i < n; ++i) {
@@ -44,55 +42,61 @@ namespace Powell {
     return x < 0 ? -1 : 1;
   }
 
+  // As in Chapter 10 (2nd Ed: pp. 400-401, 3rd Ed: pp. 491-492) of
+  //   W.H. Press, S.A. Teukolsky, W.T. Vetterling, B.P. Flanner:
+  //     Numerical Recipes - The Art of Scientific Computing (2nd-3rd Ed).
+  //       Cambridge University Press, 1992/2007.
   std::pair<double, double> bracket_minimum(const Function1D &f, double a = 0, double b = 1) {
+    static const double gold = (1.0 + std::sqrt(5.0)) / 2.0;
     static const double tiny = std::numeric_limits<double>::epsilon() * 100.0;
     static const double glimit = 100; // maximum magnification in the parabolic-fit step
     double fa = f(a), fb = f(b);
-    if (fb > fa) {
+    if (fb > fa) {              // switch roles so that we can go donwhill from a to b
       std::swap(a, b);
       std::swap(fa, fb);
     }
-    double c = b + phi * (b - a), fc = f(c);
-    while (fb > fc) {
+    double c = b + gold * (b - a), fc = f(c); // first guess for c
+    while (fb > fc) {                         // keep returning here until we bracket
       double r = (b - a) * (fb - fa), q = (b - c) * (fb - fa);
-      double u =
+      double u =                // compute u by parabolic extrapolation from a, b, c
         b - ((b - c) * q - (b - a) * r) / (2 * std::max(std::abs(q - r), tiny) * sign(q - r));
       double fu;
-      double ulim = b + glimit * (c - b);
-      if ((b - u) * (u - c) > 0) {
+      double ulim = b + glimit * (c - b); // we won't go farther than this
+      // Test various possibilities:
+      if ((b - u) * (u - c) > 0) { // parabolic u is between b and c
         fu = f(u);
-        if (fu < fc)
-          return { b, c };
-        if (fu > fb)
-          return { c, b };
-        u = c + phi * (c - b); fu = f(u);
-      } else if ((c - u) * (u - ulim) > 0) {
+        if (fu < fc)            // got a minimum between b and c
+          return b < c ? std::make_pair(b, c) : std::make_pair(c, b);
+        if (fu > fb)            // got a minimum between a and u
+          return a < u ? std::make_pair(a, u) : std::make_pair(u, a);
+        u = c + gold * (c - b); fu = f(u); // parabolic fit was no use, use default magnification
+      } else if ((c - u) * (u - ulim) > 0) { // parabolic fit between c and the allowed limit
         fu = f(u);
         if (fu < fc) {
           b = c; fb = fc;
           c = u; fc = fu;
-          u = c + phi * (c - b); fu = f(u);
+          u = u + gold * (u - c); fu = f(u);
         }
-      } else if ((u - ulim) * (ulim - c) >= 0) {
+      } else if ((u - ulim) * (ulim - c) >= 0) { // limit parabolic u to maximum allowed value
         u = ulim; fu = f(u);
-      } else {
-        u = c + phi * (c - b); fu = f(u);
+      } else {                  // reject parabolic u, use default magnification
+        u = c + gold * (c - b); fu = f(u);
       }
+      // Eliminate oldest point and continue
       a = b; fa = fb;
       b = c; fb = fc;
       c = u; fc = fu;
     }
 
-    return { a, c };
+    return a < c ? std::make_pair(a, c) : std::make_pair(c, a);
   }
 
   // As in Chapter 5, Section 8 (pp. 79-80) of
   //  R.P. Brent: Algorithms for minimization without derivatives, Prentice Hall, 1973.
   double brent(const Function1D &f, double a, double b,
                size_t max_iteration, double eps, double t = 1.0e-10) {
-    if (a > b)
-      std::swap(a, b);
-    double x = a + phi * (b - a), v = x, w = x, d, e = 0;
+    static const double c = (3.0 - std::sqrt(5.0)) / 2.0;
+    double x = a + c * (b - a), v = x, w = x, d, e = 0;
     double fx = f(x), fv = fx, fw = fx;
     for (size_t iter = 0; iter < max_iteration; ++iter) {
       // Main loop
@@ -125,7 +129,7 @@ namespace Powell {
       } else {
         // A "golden section" step
         e = (x < m ? b : a) - x;
-        d = phi * e;
+        d = c * e;
       }
       // f must not be evaluated too close to x
       double u = x + (std::abs(d) >= tol ? d : (d > 0 ? tol : -tol)), fu = f(u);

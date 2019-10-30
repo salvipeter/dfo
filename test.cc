@@ -58,7 +58,7 @@ double flower(const std::vector<double> &x) {
   return a * norm + b * std::sin(c * std::atan(x[1] / x[0]));
 }
 
-void tryMethod(Optimizer optimizer, Function f, std::vector<double> x) {
+void tryMethod(Optimizer optimizer, Function f, std::vector<double> x, bool print_values) {
   static size_t maxit = 1000;
   static double tolerance = 1.0e-8;
 
@@ -83,27 +83,29 @@ void tryMethod(Optimizer optimizer, Function f, std::vector<double> x) {
   stop = std::chrono::steady_clock::now();
   std::cout << name << ":" << std::endl;
   std::cout << evaluation_counter << " evaluations, result: " << f(x) << std::endl;
-  std::cout << "  at:";
-  for (double xi : x)
-    std::cout << ' ' << xi;
-  std::cout << std::endl;
+  if (print_values) {
+    std::cout << "  at:";
+    for (double xi : x)
+      std::cout << ' ' << xi;
+    std::cout << std::endl;
+  }
   std::cout << "  evaluation time: "
             << std::chrono::duration_cast<std::chrono::milliseconds>(stop - start).count()
             << "ms" << std::endl;
 }
 
-void tryFunction(std::string name, Function f, std::vector<double> init) {
+void tryFunction(std::string name, Function f, std::vector<double> init, bool print_values) {
   std::cout << "[" << name << "]" << std::endl;
-  tryMethod(Optimizer::MADS, f, init);
-  tryMethod(Optimizer::NELDER_MEAD, f, init);
-  tryMethod(Optimizer::POWELL, f, init);
+  tryMethod(Optimizer::MADS, f, init, print_values);
+  tryMethod(Optimizer::NELDER_MEAD, f, init, print_values);
+  tryMethod(Optimizer::POWELL, f, init, print_values);
 }
 
 int main() {
-  tryFunction("Ackley", ackley, { 3.0, 12.5, -4.5, 5.7, 10.1 });
-  tryFunction("Michaelewicz", michaelewicz, { 1.3, 3.7 });
-  tryFunction("Branin", branin, { 12.0, 14.5 });
-  tryFunction("Flower", flower, { 1.3, 2.7 });
+  tryFunction("Ackley", ackley, { 3.0, 12.5, -4.5, 5.7, 10.1 }, true);
+  tryFunction("Michaelewicz", michaelewicz, { 1.3, 3.7 }, true);
+  tryFunction("Branin", branin, { 12.0, 14.5 }, true);
+  tryFunction("Flower", flower, { 1.3, 2.7 }, true);
 
   std::random_device rd;
   std::default_random_engine re(rd());
@@ -112,6 +114,6 @@ int main() {
   for (size_t i = 0; i < 100; ++i)
     large.push_back(rgen(re));
 
-  tryFunction("Ackley - large", ackley, large);
-  tryFunction("Michaelewicz - large", michaelewicz, large);
+  tryFunction("Ackley - large", ackley, large, false);
+  tryFunction("Michaelewicz - large", michaelewicz, large, false);
 }
