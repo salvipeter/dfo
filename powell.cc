@@ -39,7 +39,7 @@ namespace Powell {
   }
 
   double sign(double x) {
-    return x < 0 ? -1 : 1;
+    return x > 0.0 ? 1.0 : (x < 0.0 ? -1.0 : 0.0);
   }
 
   // As in Chapter 10 (pp. 491-492) of
@@ -57,7 +57,7 @@ namespace Powell {
     }
     double c = b + gold * (b - a), fc = f(c); // first guess for c
     while (fb > fc) {                         // keep returning here until we bracket
-      double r = (b - a) * (fb - fa), q = (b - c) * (fb - fa);
+      double r = (b - a) * (fb - fc), q = (b - c) * (fb - fa);
       double u =                // compute u by parabolic extrapolation from a, b, c
         b - ((b - c) * q - (b - a) * r) / (2 * std::max(std::abs(q - r), tiny) * sign(q - r));
       double fu;
@@ -75,7 +75,7 @@ namespace Powell {
         if (fu < fc) {
           b = c; fb = fc;
           c = u; fc = fu;
-          u = u + gold * (u - c); fu = f(u);
+          u = c + gold * (c - b); fu = f(u); // (2nd Ed. has this correctly)
         }
       } else if ((u - ulim) * (ulim - c) >= 0) { // limit parabolic u to maximum allowed value
         u = ulim; fu = f(u);
