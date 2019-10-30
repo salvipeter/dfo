@@ -75,7 +75,7 @@ namespace Powell {
         if (fu < fc) {
           b = c; fb = fc;
           c = u; fc = fu;
-          u = c + gold * (c - b); fu = f(u); // (2nd Ed. has this correctly)
+          u = c + gold * (c - b); fu = f(u);
         }
       } else if ((u - ulim) * (ulim - c) >= 0) { // limit parabolic u to maximum allowed value
         u = ulim; fu = f(u);
@@ -181,8 +181,7 @@ namespace Powell {
       double fx_prev = fx, fx1 = 0, largest_decrease = 0;
       size_t best_dir = 0;
       for (size_t i = 0; i < n; ++i) {
-        auto d = U[i];
-        std::tie(x1, fx1) = line_search(f, x1, d, max_iteration_1d, tolerance_1d);
+         std::tie(x1, fx1) = line_search(f, x1, U[i], max_iteration_1d, tolerance_1d);
         if (fx_prev - fx1 > largest_decrease) {
           largest_decrease = fx_prev - fx1;
           best_dir = i;

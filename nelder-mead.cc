@@ -98,8 +98,10 @@ namespace NelderMead {
 
       // Compute the standard deviation of y
       double mean = std::accumulate(y.begin(), y.end(), 0.0) / (n + 1.0);
-      Delta = std::transform_reduce(y.begin(), y.end(), 0.0, std::plus<>(),
-                                    [mean](double yi) { return std::pow(yi - mean, 2); }) / (n + 1);
+      Delta = 0.0;
+      for (double yi : y)
+        Delta += std::pow(yi - mean, 2);
+      Delta /= (n + 1);
     }
 
     // Find the minimum
