@@ -15,7 +15,7 @@ namespace DIRECT {
     Interval(const Point &c, double y, const std::vector<size_t> depths) 
       : c(c), y(y), depths(depths) { }
     size_t min_depth() const { return *std::min_element(depths.begin(), depths.end()); }
-    bool operator<(const Interval &i) const { return y < i.y; }
+    bool operator<(const Interval &i) const { return i.y < y; }
   };
   using Queue = std::priority_queue<Interval>;
   using Intervals = std::map<size_t, Queue>;
@@ -122,7 +122,7 @@ namespace DIRECT {
     std::vector<double> minvals;
     for (size_t i : dirs) {
       cs.push_back({ addmul(c, basis(i, n), std::pow( 3.0, -(int)d-1)),
-                     addmul(c, basis(i, n), std::pow(-3.0, -(int)d-1)) });
+                     addmul(c, basis(i, n), -std::pow(3.0, -(int)d-1)) });
       vs.push_back({ f(cs.back().first), f(cs.back().second) });
       minvals.push_back(std::min(vs.back().first, vs.back().second));
     }

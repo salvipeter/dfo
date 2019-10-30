@@ -71,8 +71,8 @@ void tryMethod(Optimizer optimizer, Function f, std::vector<double> x, bool prin
   case Optimizer::DIRECT:
     name = "DIRECT";
     {
-      std::vector<double> a(x.size(), -30), b(x.size(), 50);
-      x = DIRECT::optimize(f, a, b, 20, tolerance);
+      std::vector<double> a(x.size(), -3), b(x.size(), 5);
+      x = DIRECT::optimize(f, a, b, 30, tolerance);
     }
     break;
   case Optimizer::MADS:
