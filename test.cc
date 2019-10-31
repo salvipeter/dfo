@@ -61,6 +61,12 @@ double flower(const std::vector<double> &x) {
   return a * norm + b * std::sin(c * std::atan(x[1] / x[0]));
 }
 
+double mckinnon(const std::vector<double> &x) {
+  ++evaluation_counter;
+  double tau = 2, theta = 6, phi = 60;
+  return (x[0] <= 0 ? phi : 1) * theta * std::pow(std::abs(x[0]), tau) + x[1] + x[1] * x[1];
+}
+
 void tryMethod(Optimizer optimizer, Function f, std::vector<double> x, bool print_values) {
   static size_t maxit = 1000;
   static double tolerance = 1.0e-8;
@@ -117,6 +123,7 @@ void numericTests() {
   tryFunction("Michaelewicz", michaelewicz, { 1.3, 3.7 }, true);
   tryFunction("Branin", branin, { 12.0, 14.5 }, true);
   tryFunction("Flower", flower, { 1.3, 2.7 }, true);
+  tryFunction("McKinnon", mckinnon, { 1.3, 2.7 }, true);
 
   std::mt19937 re(1);
   std::uniform_real_distribution<double> rgen(-15, 15);
@@ -137,6 +144,8 @@ void imageTest() {
   // std::vector<double> min = { 0, 0 }, max = { 10, 10 }, x = { 3, 7 };
   // auto fun = flower;
   // std::vector<double> min = { -4, -4 }, max = { 3, 3 }, x = { -2, -3 };
+  // auto fun = mckinnon;
+  // std::vector<double> min = { -0.3, -1.5 }, max = { 1, 1 }, x = { 0.8, -1 };
 
   double step = 0.01;
   {
