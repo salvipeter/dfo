@@ -11,7 +11,7 @@
 #include <random>
 
 #ifndef M_PI
-static constexpr auto M_PI = std::acos(-1);
+static constexpr double M_PI = 3.1415926535897932384626433832795029L;
 #endif
 
 enum class Optimizer { DIRECT, MADS, NELDER_MEAD, POWELL };
