@@ -10,6 +10,10 @@
 #include <limits>
 #include <random>
 
+#ifndef M_PI
+static constexpr auto M_PI = std::acos(-1);
+#endif
+
 enum class Optimizer { DIRECT, MADS, NELDER_MEAD, POWELL };
 
 using Function = std::function<double (const std::vector<double> &)>;

@@ -1,5 +1,6 @@
 #include "powell.hh"
 
+#include <algorithm>
 #include <cmath>
 #include <limits>
 
