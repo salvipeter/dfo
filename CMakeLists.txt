@@ -17,6 +17,8 @@ add_library(dfo STATIC
   nelder-mead.cc
   powell.hh
   powell.cc
+  cross-entropy.hh
+  cross-entropy.cc
   )
 
 add_executable(dfo-test

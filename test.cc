@@ -2,6 +2,7 @@
 #include "mads.hh"
 #include "nelder-mead.hh"
 #include "powell.hh"
+#include "cross-entropy.hh"
 
 #include <chrono>
 #include <cmath>
@@ -14,7 +15,7 @@
 static constexpr double M_PI = 3.1415926535897932384626433832795029L;
 #endif
 
-enum class Optimizer { DIRECT, MADS, NELDER_MEAD, POWELL };
+enum class Optimizer { DIRECT, MADS, NELDER_MEAD, POWELL, CROSS_ENTROPY };
 
 using Function = std::function<double (const std::vector<double> &)>;
 
@@ -99,6 +100,13 @@ void tryMethod(Optimizer optimizer, Function f, std::vector<double> x, bool prin
     name = "Powell";
     Powell::optimize(f, x, maxit, tolerance, 100, 1.0e-4);
     break;
+  case Optimizer::CROSS_ENTROPY:
+    name = "Cross entropy";
+    {
+      std::vector<double> a(x.size(), -3), b(x.size(), 5);
+      x = CrossEntropy::optimize(f, a, b, maxit, 20, 4, tolerance);
+    }
+    break;
   }
   stop = std::chrono::steady_clock::now();
   std::cout << name << ":" << std::endl;
@@ -120,6 +128,7 @@ void tryFunction(std::string name, Function f, std::vector<double> init, bool pr
   tryMethod(Optimizer::MADS, f, init, print_values);
   tryMethod(Optimizer::NELDER_MEAD, f, init, print_values);
   tryMethod(Optimizer::POWELL, f, init, print_values);
+  tryMethod(Optimizer::CROSS_ENTROPY, f, init, print_values);
 }
 
 void numericTests() {
@@ -159,9 +168,10 @@ void imageTest() {
                      return fun(x);
                    };
     // DIRECT::optimize(printer, min, max, 30, 1.0e-8);
-    MADS::optimize(printer, x, 1000, 1.0e-8, 1.0);
+    // MADS::optimize(printer, x, 1000, 1.0e-8, 1.0);
     // NelderMead::optimize(printer, x, 1000, 1.0e-8, 1.0);
     // Powell::optimize(printer, x, 1000, 1.0e-8, 100, 1.0e-4);
+    CrossEntropy::optimize(printer, min, max, 1000, 15, 5, 1.0e-8);
   }
 
   double vmin = std::numeric_limits<double>::infinity(), vmax = -vmin;
@@ -183,6 +193,6 @@ void imageTest() {
 }
 
 int main() {
-  // numericTests();
-  imageTest();
+  numericTests();
+  // imageTest();
 }
