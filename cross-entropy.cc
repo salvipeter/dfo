@@ -40,20 +40,20 @@ namespace CrossEntropy {
     return std::sqrt(result);
   }
 
-  void optimize(const Function &f, Point &x, const Point &max_search_radii,
-                size_t max_iteration, size_t samples, size_t elite_samples, double tolerance) {
+  Point optimize(const Function &f, Point &mean, const Point &stddev,
+                 size_t max_iteration, size_t samples, size_t elite_samples, double tolerance) {
     // Set up the multivariate Gaussian distribution
     std::random_device rd;
     std::default_random_engine re(rd());
     std::vector<std::normal_distribution<>> P;
-    size_t n = x.size();
+    size_t n = mean.size();
     for (size_t i = 0; i < n; ++i)
-      P.push_back(std::normal_distribution<>{ x[i], max_search_radii[i] / 3 });
+      P.push_back(std::normal_distribution<>{ mean[i], stddev[i] });
 
     // Main iteration
     std::vector<Point> s(samples);
     std::vector<double> fs(samples);
-    auto last_x = x;
+    auto last_mean = mean;
     for (size_t iter = 0; iter < max_iteration; ++iter) {
       // Generate samples
       for (size_t j = 0; j < samples; ++j) {
@@ -72,23 +72,25 @@ namespace CrossEntropy {
 
       // Fit a new distribution on the best values
       s.resize(elite_samples);  // does not change the capacity
-      x = centroid(s);
-      auto stddev = fitStdDev(s, x);
+      mean = centroid(s);
+      auto stddev = fitStdDev(s, mean);
       for (size_t i = 0; i < n; ++i)
-        P[i] = std::normal_distribution<>{ x[i], stddev[i] };
+        P[i] = std::normal_distribution<>{ mean[i], stddev[i] };
       s.resize(samples);
 
       // Check for convergence
-      if (distance(x, last_x) < tolerance)
-        break;
-      last_x = x;
+      if (distance(mean, last_mean) < tolerance)
+        return mean;
+      last_mean = mean;
     }
+
+    return mean;
   }
 
-  void optimize(const Function &f, Point &x, double search_radius,
-                size_t max_iteration, size_t samples, size_t elite_samples, double tolerance) {
-    Point radii(x.size(), search_radius);
-    optimize(f, x, radii, max_iteration, samples, elite_samples, tolerance);
+  Point optimize(const Function &f, Point &mean, double stddev,
+                 size_t max_iteration, size_t samples, size_t elite_samples, double tolerance) {
+    Point stddevs(mean.size(), stddev);
+    return optimize(f, mean, stddevs, max_iteration, samples, elite_samples, tolerance);
   }
 
   Point optimizeBox(const Function &f, const Point &a, const Point &b,
@@ -97,9 +99,8 @@ namespace CrossEntropy {
     auto radii = deviation(a, b);
     size_t n = x.size();
     for (size_t i = 0; i < n; ++i)
-      radii[i] = std::abs(radii[i]) / 2;
-    optimize(f, x, radii, max_iteration, samples, elite_samples, tolerance);
-    return x;
+      radii[i] = std::abs(radii[i]) / 6;
+    return optimize(f, x, radii, max_iteration, samples, elite_samples, tolerance);
   }
 
 }
