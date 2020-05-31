@@ -15,7 +15,7 @@
 static constexpr double M_PI = 3.1415926535897932384626433832795029L;
 #endif
 
-enum class Optimizer { DIRECT, MADS, NELDER_MEAD, POWELL, CROSS_ENTROPY };
+enum class Optimizer { DIRECT, MADS, NELDER_MEAD, POWELL, CROSS_ENTROPY, COMBINATION };
 
 using Function = std::function<double (const std::vector<double> &)>;
 
@@ -107,6 +107,15 @@ void tryMethod(Optimizer optimizer, Function f, std::vector<double> x, bool prin
       x = CrossEntropy::optimizeBox(f, a, b, maxit, 20, 4, tolerance);
     }
     break;
+  case Optimizer::COMBINATION:
+    name = "Combination";
+    {
+      std::vector<double> a(x.size(), -3), b(x.size(), 5);
+      double step_length = 0.1;
+      x = CrossEntropy::optimizeBox(f, a, b, maxit, 50, 10, step_length);
+      NelderMead::optimize(f, x, maxit, tolerance, step_length);
+    }
+    break;
   }
   stop = std::chrono::steady_clock::now();
   std::cout << name << ":" << std::endl;
@@ -129,6 +138,7 @@ void tryFunction(std::string name, Function f, std::vector<double> init, bool pr
   tryMethod(Optimizer::NELDER_MEAD, f, init, print_values);
   tryMethod(Optimizer::POWELL, f, init, print_values);
   tryMethod(Optimizer::CROSS_ENTROPY, f, init, print_values);
+  tryMethod(Optimizer::COMBINATION, f, init, print_values);
 }
 
 void numericTests() {
