@@ -102,9 +102,10 @@ void tryMethod(Optimizer optimizer, Function f, std::vector<double> x, bool prin
     break;
   case Optimizer::CROSS_ENTROPY:
     name = "Cross entropy";
+    // CrossEntropy::optimize(f, x, 5.0, maxit, 20, 4, tolerance);
     {
       std::vector<double> a(x.size(), -3), b(x.size(), 5);
-      x = CrossEntropy::optimize(f, a, b, maxit, 20, 4, tolerance);
+      x = CrossEntropy::optimizeBox(f, a, b, maxit, 20, 4, tolerance);
     }
     break;
   }
@@ -171,7 +172,7 @@ void imageTest() {
     // MADS::optimize(printer, x, 1000, 1.0e-8, 1.0);
     // NelderMead::optimize(printer, x, 1000, 1.0e-8, 1.0);
     // Powell::optimize(printer, x, 1000, 1.0e-8, 100, 1.0e-4);
-    CrossEntropy::optimize(printer, min, max, 1000, 15, 5, 1.0e-8);
+    CrossEntropy::optimizeBox(printer, min, max, 1000, 15, 5, 1.0e-8);
   }
 
   double vmin = std::numeric_limits<double>::infinity(), vmax = -vmin;
