@@ -26,6 +26,11 @@ namespace CrossEntropy {
     return result;
   }
 
+  void affineCombine(Point &x, double alpha, const Point &y) {
+    for (size_t i = 0; i < x.size(); ++i)
+      x[i] = x[i] * (1 - alpha) + y[i] * alpha;
+  }
+
   Point deviation(const Point &p, const Point &q) {
     Point result = p;
     for (size_t i = 0; i < q.size(); ++i)
@@ -40,8 +45,9 @@ namespace CrossEntropy {
     return std::sqrt(result);
   }
 
-  Point optimize(const Function &f, Point &mean, const Point &stddev,
-                 size_t max_iteration, size_t samples, size_t elite_samples, double tolerance) {
+  Point optimize(const Function &f, Point mean, Point stddev,
+                 size_t max_iteration, size_t samples, size_t elite_samples,
+                 double tolerance, double relaxation) {
     // Set up the multivariate Gaussian distribution
     std::random_device rd;
     std::default_random_engine re(rd());
@@ -54,7 +60,7 @@ namespace CrossEntropy {
     std::vector<Point> s(samples);
     std::vector<double> fs(samples);
     auto last_mean = mean;
-    for (size_t iter = 0; iter < max_iteration; ++iter) {
+    for (size_t iter = 1; iter <= max_iteration; ++iter) {
       // Generate samples
       for (size_t j = 0; j < samples; ++j) {
         s[j].clear();
@@ -72,8 +78,8 @@ namespace CrossEntropy {
 
       // Fit a new distribution on the best values
       s.resize(elite_samples);  // does not change the capacity
-      mean = centroid(s);
-      auto stddev = fitStdDev(s, mean);
+      affineCombine(mean, relaxation, centroid(s));
+      affineCombine(stddev, relaxation, fitStdDev(s, mean));
       for (size_t i = 0; i < n; ++i)
         P[i] = std::normal_distribution<>{ mean[i], stddev[i] };
       s.resize(samples);
@@ -88,19 +94,21 @@ namespace CrossEntropy {
   }
 
   Point optimize(const Function &f, Point &mean, double stddev,
-                 size_t max_iteration, size_t samples, size_t elite_samples, double tolerance) {
+                 size_t max_iteration, size_t samples, size_t elite_samples,
+                 double tolerance, double relaxation) {
     Point stddevs(mean.size(), stddev);
-    return optimize(f, mean, stddevs, max_iteration, samples, elite_samples, tolerance);
+    return optimize(f, mean, stddevs, max_iteration, samples, elite_samples, tolerance, relaxation);
   }
 
   Point optimizeBox(const Function &f, const Point &a, const Point &b,
-                    size_t max_iteration, size_t samples, size_t elite_samples, double tolerance) {
+                    size_t max_iteration, size_t samples, size_t elite_samples,
+                    double tolerance, double relaxation) {
     auto x = centroid({ a, b });
     auto radii = deviation(a, b);
     size_t n = x.size();
     for (size_t i = 0; i < n; ++i)
       radii[i] = std::abs(radii[i]) / 6;
-    return optimize(f, x, radii, max_iteration, samples, elite_samples, tolerance);
+    return optimize(f, x, radii, max_iteration, samples, elite_samples, tolerance, relaxation);
   }
 
 }

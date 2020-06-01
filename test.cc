@@ -104,7 +104,7 @@ void tryMethod(Optimizer optimizer, Function f, std::vector<double> x, bool prin
     name = "Cross entropy";
     {
       std::vector<double> a(x.size(), -3), b(x.size(), 5);
-      x = CrossEntropy::optimizeBox(f, a, b, maxit, 20, 4, tolerance);
+      x = CrossEntropy::optimizeBox(f, a, b, maxit, 50, 10, tolerance);
     }
     break;
   case Optimizer::COMBINATION:
