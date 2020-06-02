@@ -79,7 +79,8 @@ namespace CrossEntropy {
       // Fit a new distribution on the best values
       s.resize(elite_samples);  // does not change the capacity
       affineCombine(mean, relaxation, centroid(s));
-      affineCombine(stddev, relaxation, fitStdDev(s, mean));
+      double relax = relaxation * std::pow(1 - 1.0 / iter, 5); // Don't let stddev shrink too soon
+      affineCombine(stddev, relax, fitStdDev(s, mean));
       for (size_t i = 0; i < n; ++i)
         P[i] = std::normal_distribution<>{ mean[i], stddev[i] };
       s.resize(samples);
