@@ -1,6 +1,6 @@
 # dfo
 
-Simple testing environment for deriavtive-free optimization methods.
+Simple testing environment for derivative-free optimization methods.
 
 Unless otherwise noted, the algorithms are implemented based on the code in
 
