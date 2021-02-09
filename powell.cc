@@ -6,8 +6,6 @@
 
 namespace Powell {
 
-  using Function1D = std::function<double (double)>;
-
   std::vector<Point> basis(size_t n) {
     std::vector<Point> result;
     for (size_t i = 0; i < n; ++i) {
@@ -210,5 +208,18 @@ namespace Powell {
 
     return Delta < tolerance;
   }
+
+double optimize(const Function1D &f, double x, double step,
+                size_t max_iteration, double tolerance) {
+  Function1D objective = [&](double alpha) { return f(x + alpha * step); };
+  auto [a, b] = bracket_minimum(objective);
+  double alpha = brent(objective, a, b, max_iteration, tolerance).first;
+  return x + alpha * step;
+}
+
+double optimizeBracketed(const Function1D &f, double a, double b,
+                         size_t max_iteration, double tolerance) {
+  return brent(f, a, b, max_iteration, tolerance).first;
+}
 
 } // namespace
